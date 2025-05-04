@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoCore AI Chatbot</title>
+    <style>
+        :root {
+            --neon-green: #39FF14;
+            --dark-green: #0A2F0A;
+            --black: #000;
+            --white: #fff;
+            --gray: #333;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #222;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .ecocore-chatbot {
+            font-family: 'Arial', sans-serif;
+            background-color: var(--black);
+            color: var(--white);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(57, 255, 20, 0.2);
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid rgba(57, 255, 20, 0.3);
+        }
+
+        .chatbot-header {
+            background: linear-gradient(90deg, var(--dark-green), var(--black));
+            padding: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .chatbot-header-logo {
+            font-weight: bold;
+            font-size: 18px;
+            color: var(--white);
+        }
+
+        .chatbot-header-logo span {
+            color: var(--neon-green);
+        }
+
+        .chatbot-messages {
+            height: 350px;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .message-bot {
+            background: rgba(51, 51, 51, 0.2);
+            border: 1px solid rgba(57, 255, 20, 0.1);
+            border-radius: 15px 15px 15px 0;
+            padding: 12px;
+            margin-bottom: 15px;
+            max-width: 80%;
+        }
+
+        .message-user {
+            background: rgba(57, 255, 20, 0.1);
+            border: 1px solid rgba(57, 255, 20, 0.3);
+            border-radius: 15px 15px 0 15px;
+            padding: 12px;
+            margin-bottom: 15px;
+            margin-left: auto;
+            max-width: 80%;
+        }
+
+        .chatbot-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .chatbot-option-button {
+            background: linear-gradient(90deg, var(--dark-green), var(--black));
+            border: 1px solid var(--neon-green);
+            color: var(--neon-green);
+            border-radius: 20px;
+            padding: 8px 15px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .chatbot-option-button:hover {
+            background: var(--neon-green);
+            color: var(--black);
+            box-shadow: 0 0 10px rgba(57, 255, 20, 0.5);
+        }
+
+        .chatbot-input {
+            display: flex;
+            padding: 15px;
+            background-color: rgba(51, 51, 51, 0.2);
+            border-top: 1px solid rgba(57, 255, 20, 0.2);
+        }
+
+        .chatbot-input input {
+            flex-grow: 1;
+            padding: 10px;
+            border-radius: 20px;
+            border: 1px solid rgba(57, 255, 20, 0.3);
+            background-color: rgba(0, 0, 0, 0.3);
+            color: var(--white);
+        }
+
+        .chatbot-input button {
+            background: var(--neon-green);
+            color: var(--black);
+            border: none;
+            border-radius: 50%;
+            width: 38px;
+            height: 38px;
+            margin-left: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .chatbot-input button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(57, 255, 20, 0.7);
+        }
+    </style>
+</head>
+<body>
+    <div class="ecocore-chatbot">
+        <div class="chatbot-header">
+            <div class="chatbot-header-logo"><span>Eco</span>Bot</div>
+        </div>
+        <div class="chatbot-messages" id="chatMessages">
+            <!-- Messages will be added here dynamically -->
+        </div>
+        <div class="chatbot-input">
+            <input type="text" id="userInput" placeholder="Type your message here..." onkeypress="handleKeyPress(event)">
+            <button onclick="sendMessage()">➤</button>
+        </div>
+    </div>
+
+    <script>
+        // State management
+        const state = {
+            conversationStarted: false,
+            currentState: null,
+            previousState: null
+        };
+
+        // Initialize the chat
+        window.onload = function() {
+            startConversation();
+        };
+
+        function startConversation() {
+            addBotMessage(greeting());
+            showOptions(mainMenu().options);
+            state.conversationStarted = true;
+            state.currentState = 'menu';
+        }
+
+        // Handle sending messages
+        function sendMessage() {
+            const userInput = document.getElementById('userInput');
+            const message = userInput.value.trim();
+            
+            if (message === '') return;
+            
+            addUserMessage(message);
+            userInput.value = '';
+            
+            // Process the user message
+            processUserMessage(message);
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // Add messages to the chat
+        function addBotMessage(message) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message-bot';
+            messageElement.innerHTML = message;
+            messagesContainer.appendChild(messageElement);
+            scrollToBottom();
+        }
+
+        function addUserMessage(message) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageElement = document.createElement('div');
+            messageElement.className = 'message-user';
+            messageElement.textContent = message;
+            messagesContainer.appendChild(messageElement);
+            scrollToBottom();
+        }
+
+        function showOptions(options) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const optionsContainer = document.createElement('div');
+            optionsContainer.className = 'chatbot-options';
+            
+            options.forEach(option => {
+                const button = document.createElement('button');
+                button.className = 'chatbot-option-button';
+                button.textContent = option;
+                button.onclick = function() {
+                    addUserMessage(option);
+                    processUserMessage(option);
+                };
+                optionsContainer.appendChild(button);
+            });
+            
+            messagesContainer.appendChild(optionsContainer);
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            const messagesContainer = document.getElementById('chatMessages');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Process user messages based on state
+        function processUserMessage(message) {
+            const lowerMessage = message.toLowerCase();
+            
+            // Handle return to menu from any state
+            if (lowerMessage === 'return to menu' || lowerMessage === 'main menu') {
+                state.previousState = state.currentState;
+                state.currentState = 'menu';
+                addBotMessage("What would you like to explore today?");
+                showOptions(mainMenu().options);
+                return;
+            }
+            
+            // State machine for conversation flow
+            switch(state.currentState) {
+                case 'menu':
+                    handleMenuSelection(message);
+                    break;
+                case 'about':
+                    handleAboutSection(message);
+                    break;
+                case 'features':
+                    handleFeaturesSection(message);
+                    break;
+                case 'impact':
+                    handleImpactSection(message);
+                    break;
+                case 'insights':
+                    handleInsightsSection(message);
+                    break;
+                case 'connect':
+                    handleConnectSection(message);
+                    break;
+                default:
+                    // Handle unknown state or general questions
+                    const faqResponse = handleFAQ(message);
+                    addBotMessage(faqResponse.message);
+                    if (faqResponse.followUp) {
+                        setTimeout(() => {
+                            addBotMessage(faqResponse.followUp);
+                        }, 500);
+                    }
+                    if (faqResponse.options) {
+                        showOptions(faqResponse.options);
+                    } else {
+                        showOptions(["Return to menu"]);
+                    }
+            }
+        }
+
+        // Handle main menu selections
+        function handleMenuSelection(message) {
+            switch(message) {
+                case 'Learn about EcoCore AI':
+                    const aboutResponse = aboutEcoCore();
+                    addBotMessage(aboutResponse.message);
+                    if (aboutResponse.followUp) {
+                        setTimeout(() => {
+                            addBotMessage(aboutResponse.followUp);
+                        }, 500);
+                    }
+                    showOptions(['Mission', 'Technology', 'Team', 'Return to menu']);
+                    state.currentState = 'about';
+                    break;
+                
+                case 'Discover our features':
+                    const featuresResponse = exploreFeatures();
+                    addBotMessage(featuresResponse.message);
+                    showOptions(featuresResponse.features.concat(['Return to menu']));
+                    state.currentState = 'features';
+                    break;
+                
+                case 'Environmental impact statistics':
+                    const impactResponse = impactStatistics();
+                    let statsMessage = impactResponse.message + "<br><br>";
+                    impactResponse.statistics.forEach(stat => {
+                        statsMessage += `<strong>${stat.metric}:</strong> ${stat.value} (${stat.context})<br>`;
+                    });
+                    addBotMessage(statsMessage);
+                    if (impactResponse.followUp) {
+                        setTimeout(() => {
+                            addBotMessage(impactResponse.followUp);
+                        }, 500);
+                    }
+                    showOptions(['Learn how to contribute', 'Return to menu']);
+                    state.currentState = 'impact';
+                    break;
+                
+                case 'Sustainable technology insights':
+                    const insightsResponse = sustainableTechInsights();
+                    let insightsMessage = insightsResponse.message + "<br><br>";
+                    insightsResponse.insights.forEach(insight => {
+                        insightsMessage += `<strong>${insight.title}:</strong> ${insight.description}<br><br>`;
+                    });
+                    addBotMessage(insightsMessage);
+                    if (insightsResponse.followUp) {
+                        setTimeout(() => {
+                            addBotMessage(insightsResponse.followUp);
+                        }, 500);
+                    }
+                    showOptions(['Business recommendations', 'Individual recommendations', 'City recommendations', 'Return to menu']);
+                    state.currentState = 'insights';
+                    break;
+                
+                case 'Connect with our team':
+                    const connectResponse = connectWithTeam();
+                    addBotMessage(connectResponse.message);
+                    const connectOptions = connectResponse.options.map(option => option.method);
+                    showOptions(connectOptions.concat(['Return to menu']));
+                    state.currentState = 'connect';
+                    break;
+                
+                case 'Ask a specific question':
+                    addBotMessage("What would you like to know about EcoCore AI? You can ask me anything about our technology, impact, or sustainability initiatives.");
+                    state.currentState = 'faq';
+                    break;
+                
+                default:
+                    // Try to handle as an FAQ
+                    const faqResponse = handleFAQ(message);
+                    addBotMessage(faqResponse.message);
+                    if (faqResponse.followUp) {
+                        setTimeout(() => {
+                            addBotMessage(faqResponse.followUp);
+                        }, 500);
+                    }
+                    showOptions(mainMenu().options);
+            }
+        }
+
+        // Handle about section
+        function handleAboutSection(message) {
+            switch(message.toLowerCase()) {
+                case 'mission':
+                    const missionResponse = missionDetails();
+                    addBotMessage(missionResponse.message);
+                    if (missionResponse.followUp) {
+                        setTimeout(() => {
+                            addBotMessage(missionResponse.followUp);
+                        }, 500);
+                    }
+                    showOptions(['Mission', 'Technology', 'Team', 'Return to menu']);
+                    break;
+                
+                case 'technology':
+                    const techResponse = technologyApproach();
+                    addBotMessage(techResponse.message);
+                    if (techResponse.followUp) {
+                        setTimeout(() => {
+                            addBotMessage(techResponse.followUp);
+                        }, 500);
+                    }
+                    showOptions(['Mission', 'Technology', 'Team', 'Return to menu']);
+                    break;
+                
+                case 'team':
+                    const teamResponse = foundingTeam();
+                    addBotMessage(teamResponse.message);
+                    if (teamResponse.followUp) {
+                        setTimeout(() => {
+                            addBotMessage(teamResponse.followUp);
+                        }, 500);
+                    }
+                    showOptions(['Mission', 'Technology', 'Team', 'Return to menu']);
+                    break;
+                
+                default:
+                    // Try to handle as an FAQ
+                    const faqResponse = handleFAQ(message);
+                    addBotMessage(faqResponse.message);
+                    if (faqResponse.followUp) {
+                        setTimeout(() => {
+                            addBotMessage(faqResponse.followUp);
+                        }, 500);
+                    }
+                    showOptions(['Mission', 'Technology', 'Team', 'Return to menu']);
+            }
+        }
+
+        // Handle features section
+        function handleFeaturesSection(message) {
+            // Check if the message is one of the features
+            const features = exploreFeatures().features;
+            if (features.includes(message)) {
+                const featureResponse = featureDetails(message);
+                addBotMessage(featureResponse.message);
+                if (featureResponse.followUp) {
+                    setTimeout(() => {
+                        addBotMessage(featureResponse.followUp);
+                    }, 500);
+                }
+                showOptions(features.concat(['Return to menu']));
+            } else {
+                // Handle as FAQ
+                const faqResponse = handleFAQ(message);
+                addBotMessage(faqResponse.message);
+                if (faqResponse.followUp) {
+                    setTimeout(() => {
+                        addBotMessage(faqResponse.followUp);
+                    }, 500);
+                }
+                showOptions(features.concat(['Return to menu']));
+            }
+        }
+
+        // Handle impact section
+        function handleImpactSection(message) {
+            if (message.toLowerCase() === 'learn how to contribute') {
+                addBotMessage("There are many ways your organization can contribute to environmental impact. Would you like specific recommendations for businesses, individuals, or cities?");
+                showOptions(['Business recommendations', 'Individual recommendations', 'City recommendations', 'Return to menu']);
+                state.currentState = 'insights';
+            } else {
+                // Handle as FAQ
+                const faqResponse = handleFAQ(message);
+                addBotMessage(faqResponse.message);
+                if (faqResponse.followUp) {
+                    setTimeout(() => {
+                        addBotMessage(faqResponse.followUp);
+                    }, 500);
+                }
+                showOptions(['Learn how to contribute', 'Return to menu']);
+            }
+        }
+
+        // Handle insights section
+        function handleInsightsSection(message) {
+            if (message.includes('recommendations')) {
+                let category;
+                if (message.toLowerCase().includes('business')) {
+                    category = 'business';
+                } else if (message.toLowerCase().includes('individual')) {
+                    category = 'individual';
+                } else if (message.toLowerCase().includes('city')) {
+                    category = 'city';
+                } else {
+                    category = 'individual'; // Default
+                }
+                
+                const recommendationsResponse = ecoFriendlyRecommendations(category);
+                let recMessage = recommendationsResponse.message + "<br><br>";
+                recommendationsResponse.recommendations.forEach((rec, index) => {
+                    recMessage += `${index + 1}. ${rec}<br>`;
+                });
+                addBotMessage(recMessage);
+                if (recommendationsResponse.followUp) {
+                    setTimeout(() => {
+                        addBotMessage(recommendationsResponse.followUp);
+                    }, 500);
+                }
+                showOptions(['Business recommendations', 'Individual recommendations', 'City recommendations', 'Return to menu']);
+            } else {
+                // Handle as FAQ
+                const faqResponse = handleFAQ(message);
+                addBotMessage(faqResponse.message);
+                if (faqResponse.followUp) {
+                    setTimeout(() => {
+                        addBotMessage(faqResponse.followUp);
+                    }, 500);
+                }
+                showOptions(['Business recommendations', 'Individual recommendations', 'City recommendations', 'Return to menu']);
+            }
+        }
+
+        // Handle connect section
+        function handleConnectSection(message) {
+            const connectResponse = connectWithTeam();
+            const connectOption = connectResponse.options.find(option => 
+                option.method.toLowerCase() === message.toLowerCase()
+            );
+            
+            if (connectOption) {
+                addBotMessage(`<strong>${connectOption.method}:</strong> ${connectOption.description}`);
+                // In a real implementation, you would handle the action here
+                addBotMessage("In a live implementation, this would " + connectOption.action);
+                showOptions(['Try another contact method', 'Return to menu']);
+            } else if (message.toLowerCase() === 'try another contact method') {
+                addBotMessage("How else would you prefer to reach our team?");
+                const connectOptions = connectResponse.options.map(option => option.method);
+                showOptions(connectOptions.concat(['Return to menu']));
+            } else {
+                // Handle as FAQ
+                const faqResponse = handleFAQ(message);
+                addBotMessage(faqResponse.message);
+                if (faqResponse.followUp) {
+                    setTimeout(() => {
+                        addBotMessage(faqResponse.followUp);
+                    }, 500);
+                }
+                const connectOptions = connectResponse.options.map(option => option.method);
+                showOptions(connectOptions.concat(['Return to menu']));
+            }
+        }
+
+        // All the dialog functions
+        function greeting() {
+            const greetings = [
+                "🌿 Welcome to EcoCore AI. I'm EcoBot, your intelligent guide to a sustainable future. How can I assist you today?",
+                "⚡ Hello! I'm EcoBot, powered by EcoCore AI. I'm here to help you discover sustainable technology solutions. What brings you here?",
+                "🌱 Greetings from EcoCore AI. I'm EcoBot, designed to support your journey toward environmental innovation. How may I assist you?"
+            ];
+            
+            return randomElement(greetings);
+        }
+
+        function mainMenu() {
+            return {
+                message: "What would you like to explore today?",
+                options: [
+                    "Learn about EcoCore AI",
+                    "Discover our features",
+                    "Environmental impact statistics",
+                    "Sustainable technology insights",
+                    "Connect with our team",
+                    "Ask a specific question"
+                ]
+            };
+        }
+
+        function aboutEcoCore() {
+            return {
+                message: "EcoCore AI was founded with a vision to revolutionize how businesses and individuals interact with energy systems. Our team of experts in artificial intelligence, renewable energy, and sustainable development has created a platform that makes green technology accessible and efficient.",
+                followUp: "Would you like to know more about our mission, technology approach, or founding team?"
+            };
+        }
+
+        function missionDetails() {
+            return {
+                message: "Our mission at EcoCore AI is to harness the power of artificial intelligence to optimize energy consumption and reduce carbon footprints globally. We believe technological innovation is key to solving our planet's most pressing environmental challenges.",
+                followUp: "What specific aspect of our mission interests you most?"
+            };
+        }
+
+        function technologyApproach() {
+            return {
+                message: "EcoCore AI leverages cutting-edge machine learning algorithms optimized for energy efficiency. Our systems analyze consumption patterns, integrate with renewable sources, and provide real-time optimization that reduces waste while maximizing output.",
+                followUp: "Would you like to learn about a specific technology we implement?"
+            };
+        }
+
+        function foundingTeam() {
+            return {
+                message: "EcoCore AI was developed by a diverse team of experts in AI, environmental science, and renewable energy systems. Our leadership combines decades of experience in sustainable technology development with a passion for creating meaningful environmental impact.",
+                followUp: "Can I tell you about any specific initiatives our team is currently focused on?"
+            };
+        }
+
+        function exploreFeatures() {
+            return {
+                message: "EcoCore AI offers several innovative features designed to optimize sustainability efforts:",
+                features: [
+                    "Intelligent Energy Management",
+                    "Carbon Footprint Reduction",
+                    "Renewable Integration",
+                    "Data-Driven Insights",
+                    "Secure Infrastructure",
+                    "Global Impact Initiatives"
+                ],
+                followUp: "Which feature would you like to learn more about?"
+            };
+        }
+
+        function featureDetails(feature) {
+            const details = {
+                "Intelligent Energy Management": "Our AI algorithms optimize energy distribution in real-time, reducing waste and maximizing efficiency across all connected systems. The technology adapts to usage patterns, weather conditions, and available energy sources to ensure optimal performance with minimal environmental impact.",
+                
+                "Carbon Footprint Reduction": "Track and reduce your carbon emissions with precision. Our system provides actionable insights to minimize environmental impact through detailed analytics, automated adjustments, and personalized recommendations tailored to your specific energy profile.",
+                
+                "Renewable Integration": "Seamlessly integrate with existing renewable energy sources, optimizing output and storage capabilities for maximum sustainability. Our AI dynamically balances between different energy sources, prioritizing renewables while ensuring consistent supply.",
+                
+                "Data-Driven Insights": "Leverage comprehensive analytics to make informed decisions about your energy usage and sustainability initiatives. Our dashboards provide clear visualizations of consumption patterns, saving opportunities, and environmental impact metrics.",
+                
+                "Secure Infrastructure": "Advanced encryption and security protocols protect your data while ensuring reliable performance across all connected devices. Our platform is built with enterprise-grade security while maintaining ease of use.",
+                
+                "Global Impact Initiatives": "Join a worldwide network of sustainability pioneers using EcoCore AI to make a meaningful difference in environmental conservation. Our community shares insights, best practices, and collaborates on larger sustainability goals."
+            };
+            
+            return {
+                message: details[feature] || "I don't have specific information about that feature. Would you like to explore our other capabilities?",
+                followUp: "Would you like implementation examples for this feature or to explore another aspect of EcoCore AI?"
+            };
+        }
+
+        function impactStatistics() {
+            return {
+                message: "EcoCore AI's global impact is growing every day. Here are our current statistics:",
+                statistics: [
+                    {
+                        metric: "Energy Saved",
+                        value: "2,547 GWh",
+                        context: "Equivalent to powering 213,000 homes for a year"
+                    },
+                    {
+                        metric: "CO₂ Reduction",
+                        value: "1,253,000 Tons",
+                        context: "Equal to planting 20.7 million trees"
+                    },
+                    {
+                        metric: "Global Users",
+                        value: "48,760+",
+                        context: "Across 43 countries and growing"
+                    }
+                ],
+                followUp: "Would you like to learn how your organization can contribute to these numbers?"
+            };
+        }
+
+        function sustainableTechInsights() {
+            return {
+                message: "EcoCore AI stays at the forefront of sustainable technology innovation. Here are some key insights we've developed:",
+                insights: [
+                    {
+                        title: "AI & Renewable Optimization",
+                        description: "Machine learning algorithms can increase solar and wind energy output by up to 23% through predictive maintenance and optimal positioning."
+                    },
+                    {
+                        title: "Smart Grid Integration",
+                        description: "AI-powered smart grids can reduce energy waste by 15-30% while improving reliability during peak demand periods."
+                    },
+                    {
+                        title: "Carbon Capture Efficiency",
+                        description: "Our algorithms have helped optimize carbon capture processes, improving efficiency by 17% while reducing operational costs."
+                    }
+                ],
+                followUp: "Would you like to explore how these technologies could benefit your specific industry?"
+            };
+        }
+
+        function connectWithTeam() {
+            return {
+                message: "We'd love to connect with you! How would you prefer to reach our team?",
+                options: [
+                    {
+                        method: "Contact Form",
+                        description: "Fill out our secure web form with your inquiry",
+                        action: "redirectToContactForm"
+                    },
+                    {
+                        method: "Email",
+                        description: "Reach us at [removed]",
+                        action: "copyEmail"
+                    },
+                    {
+                        method: "Phone",
+                        description: "Call us at [removed]",
+                        action: "copyPhone"
+                    },
+                    {
+                        method: "Schedule Demo",
+                        description: "Book a personalized demonstration of EcoCore AI",
+                        action: "redirectToCalendar"
+                    }
+                ]
+            };
+        }
+
+        function handleFAQ(question) {
+            const faqs = {
+                "how does ecocore ai work": "EcoCore AI uses advanced machine learning algorithms to analyze energy consumption patterns, integrate with existing systems, and optimize usage in real-time. Our technology creates a feedback loop that continuously improves efficiency while reducing environmental impact.",
+                
+                "what industries do you serve": "EcoCore AI solutions are adaptable across multiple sectors including commercial real estate, manufacturing, smart cities, agriculture, and residential communities. Our systems scale from individual buildings to entire urban districts.",
+                
+                "how much can i save": "While results vary based on your current systems and usage patterns, our clients typically see energy savings of 15-30% within the first year of implementation, with additional efficiency gains over time as our AI learns your specific patterns.",
+                
+                "is installation complicated": "Not at all. EcoCore AI is designed for minimal disruption. Most implementations require simple sensors and a central hub that connects to your existing systems. Our team handles the entire setup process, typically completing installation within 1-3 days.",
+                
+                "how secure is my data": "EcoCore AI implements enterprise-grade encryption and security protocols. Your data is protected both in transit and at rest, with optional on-premises deployment for sensitive applications. We comply with major data protection regulations worldwide.",
+                
+                "what makes ecocore different": "Unlike conventional energy management systems, EcoCore AI combines predictive analytics, real-time optimization, and continuous learning to create truly adaptive solutions. Our technology doesn't just monitor – it actively improves your energy profile while maintaining comfort and operational requirements."
+            };
+            
+            // Normalize the question for matching
+            const normalizedQuestion = question.toLowerCase().trim();
+            
+            // Find the best matching FAQ
+            for (const key in faqs) {
+                if (normalizedQuestion.includes(key) || key.includes(normalizedQuestion)) {
+                    return {
+                        message: faqs[key],
+                        followUp: "Does that answer your question? Is there anything else you'd like to know?"
+                    };
+                }
+            }
+            
+            // No match found
+            return {
+                message: "I don't have a specific answer for that question. Would you like me to connect you with an EcoCore AI specialist who can help?",
+                options: ["Yes, connect me", "No, I'll ask something else", "Return to menu"]
+            };
+        }
+
+        function ecoFriendlyRecommendations(category) {
+            const recommendations = {
+                "business": [
+                    "Implement smart building management systems that adjust lighting and HVAC based on occupancy",
+                    "Transition company vehicle fleets to electric or hybrid models",
+                    "Install energy monitoring systems to identify waste and optimization opportunities",
+                    "Adopt renewable energy sources through on-site generation or green energy providers",
+                    "Implement AI-powered waste reduction and recycling programs"
+                ],
+                "individual": [
+                    "Use smart home devices to optimize energy usage based on your daily routines",
+                    "Consider community solar programs if personal installation isn't feasible",
+                    "Explore micromobility options for short urban commutes",
+                    "Implement water conservation technology like smart irrigation systems",
+                    "Use energy usage applications to identify your highest consumption activities"
+                ],
+                "city": [
+                    "Deploy smart street lighting that adjusts based on traffic and pedestrian activity",
+                    "Implement AI-optimized public transportation routing",
+                    "Create digital twin models to test sustainability initiatives before full deployment",
+                    "Install distributed renewable energy generation with smart grid integration",
+                    "Develop predictive maintenance systems for water infrastructure to prevent waste"
+                ]
+            };
+            
+            return {
+                message: `Here are some AI-enhanced sustainability recommendations for ${category}:`,
+                recommendations: recommendations[category] || recommendations["individual"],
+                followUp: "Would you like specific information about implementing any of these recommendations?"
+            };
+        }
+
+        function handleUnknownInput() {
+            const responses = [
+                "I'm still learning and didn't quite catch that. Could you rephrase your question about EcoCore AI or sustainable technology?",
+                "That's beyond my current knowledge about EcoCore AI. Would you like to explore our main features instead?",
+                "I want to provide accurate information about EcoCore AI and sustainable technology. Could you try asking your question differently?"
+            ];
+            
+            return {
+                message: randomElement(responses),
+                options: ["Return to main menu", "Connect with a specialist"]
+            };
+        }
+
+        function errorRecovery() {
+            return {
+                message: "I apologize for the technical difficulty. To ensure you get the assistance you need with EcoCore AI:",
+                options: [
+                    "Restart conversation",
+                    "Connect with live support",
+                    "Send feedback about this issue"
+                ]
+            };
+        }
+
+        // Helper function to get a random element from an array
+        function randomElement(array) {
+            return array[Math.floor(Math.random() * array.length)];
+        }
+    </script>
+</body>
+</html>
